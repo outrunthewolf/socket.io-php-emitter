@@ -146,49 +146,8 @@ class Emitter
      * @return SocketIO\Emitter
      */
     public function emit($key = '', $data) {
-        
-        $packet = array();
-        $packet['type'] = $this->event;
 
-        // handle binary wrapper args
-        for ($i = 0; $i < count($data); $i++) {
-            $arg = $data[$i];
-            if ($arg instanceof Binary) {
-                $data[$i] = strval($arg);
-            }
-        }
-
-        // If catch
-        if ($this->readFlag('binary')) $packet['type'] = $this->binaryEvent;
-
-        $packet['data'] = $data;
-
-        // set namespaces
-        if (isset($this->_flags['nsp'])) {
-            $packet['nsp'] = $this->_flags['nsp'];
-            unset($this->_flags['nsp']);
-        } else {
-            $packet['nsp'] = '/';
-        }
-
-        // publish
-        $packed = msgpack_pack( array($packet, array(
-                'rooms' => $this->_rooms,
-                'flags' => $this->_flags
-            ))
-        );
-
-        // hack buffer extensions for msgpack with binary
-        if ($packet['type'] == $this->binaryEvent) {
-            $packed = str_replace(pack('c', 0xda), pack('c', 0xd8), $packed);
-            $packed = str_replace(pack('c', 0xdb), pack('c', 0xd9), $packed);
-        }
-
-        $this->redis->publish($this->key . $key, $packed);
-
-        // reset state
-        $this->_rooms = array();
-        $this->_flags = array();
+        $this->redis->publish($this->key . $key, json_encode($data));
 
         return $this;
     }
