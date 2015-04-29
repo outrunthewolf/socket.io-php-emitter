@@ -147,12 +147,16 @@ class Emitter
      */
     public function emit($key = '', $data) {
 
+        $data = json_encode($data);
+        $key = $this->key . $key;
+
         // Try publish by normal means, catch other wise (HHVM issue)
         try {
-            $this->redis->publish($this->key . $key, json_encode($data));
-        } catch() { 
-            $this->redis->__call('publish', array($this->key . $key, json_encode($data)));
+            $this->redis->__call('publish', array($key, $data));
+        } catch(\Exception $e) { 
+            $this->redis->publish($key, $data);
         }
+
         
         return $this;
     }
